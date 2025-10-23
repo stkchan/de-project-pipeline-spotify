@@ -1,0 +1,9 @@
+{
+	"name": "df-pipeline-spotify",
+	"location": "southeastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "85bc9c7b-3214-4b72-893b-2b89081f08b9",
+		"tenantId": "ffb6055a-1687-45d1-b48e-e6698ea7b86f"
+	}
+}
