@@ -230,6 +230,27 @@ During your Azure SQL Database setup, you enabled both SQL and  **Microsoft Entr
 3. Choose Data Store
    -  In the New Linked Service panel, search for `Azure SQL Database`.
    -  Select it and click Continue.
+  
+4. Configure Connection Details
+    | Field | Example Value | Description |
+    |--------|----------------|-------------|
+    | **Name** | `ls_azure_sql_pipeline_spotify` | Logical name for the linked service |
+    | **Connect via Integration Runtime** | `AutoResolveIntegrationRuntime` | Default integration runtime used by ADF |
+    | **Server name** | `project-pipeline-spotify.database.windows.net` | The fully qualified name of your Azure SQL Server |
+    | **Database name** | `project-pipeline-spotify` | The name of your Azure SQL Database |
+    | **Authentication type** | `SQL Authentication` | Use SQL credentials for authentication |
+    | **User name** | `sqladmin` | SQL admin username created during setup |
+    | **Password** | `********` | The password for the SQL admin account |
+    | **Encrypt connection** | ✅ Enabled | Ensures encrypted data transmission between ADF and SQL |
+    | **Trust server certificate** | ❌ Disabled | Recommended for secure connections (prevents untrusted certs) |
+
+5. Test Connection
+   -  Click Test connection.
+   -  If successful ✅, click Create.
+   -  If failed ❌, check:
+       -  SQL Server firewall allows access from ADF.
+       -  Server name and credentials are correct.
+       -  Your SQL Server allows Azure services to connect.
 
 
 
