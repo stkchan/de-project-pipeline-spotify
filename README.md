@@ -30,7 +30,7 @@ A Resource Group (RG) is a logical container in Azure that holds related resourc
 -  Resources in a group can be in different regions, but the RG’s location stores its metadata
 -  Deleting an RG deletes all resources inside
 ---
-### Create a Resource Group
+### 1️⃣ Create a Resource Group
 1.  Sign in to Azure Portal [`Azure Portal`](https://portal.azure.com/)
 2.  Search **Resource groups** → Create.
 3.  Subscription: pick yours.
@@ -39,7 +39,7 @@ A Resource Group (RG) is a logical container in Azure that holds related resourc
 6.  (Optional) Tags: e.g., `env=dev`
 7.  Review + create → Create.
 ---
-### Create a Storage Account
+### 2️⃣ Create a Storage Account
 A Storage Account in Azure is the foundation for storing data in the cloud — it’s like a container for our data services.
 
 It provides access to multiple storage types under one account, such as:
@@ -94,7 +94,7 @@ For `production` and critical workloads, consider `ZRS` or `GRS`.
 ---
 
 
-### Create a Azure Data Factory
+### 3️⃣ Create a Azure Data Factory
 **Azure Data Factory (ADF)** is a cloud-based data integration and orchestration service.
 It helps us build, schedule, and manage ETL/ELT pipelines that move and transform data between on-premises and cloud systems.
 
@@ -134,7 +134,7 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
 5.  Review & merge Pull Request in GitHub.
 ---
 
-### Create a Azure SQL
+### 4️⃣ Create a Azure SQL
 **What is Azure SQL?**
 
 -  **Azure SQL** is a family of fully managed SQL Server–based services in Azure:
