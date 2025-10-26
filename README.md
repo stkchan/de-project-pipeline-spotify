@@ -175,6 +175,48 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
 
 ---
 
+## Create Tables & Ingest Data (Initial Load) in Azure SQL Database
+We use the SQL script below to create tables and insert seed data into **Azure SQL Database**.
+
+📄 **Script Location:** [`scripts/initial_load.sql`](scripts/initial_load.sql)
+
+### Steps
+1. Open your Azure SQL Database → **Query editor (preview)**.
+2. Sign in with Microsoft Entra or SQL login.
+3. Copy the SQL code from the script above.
+4. Paste and **Run** it.
+5. Verify table creation with:
+   ```sql
+   SELECT
+     COUNT(*)
+   FROM 
+     dbt.DimUser;
+   ```
+
+   
+---
+## Link Azure Data Factory (ADF) with Azure SQL Database
+
+### What is a Linked Service?
+In **Azure Data Factory (ADF)**, a Linked Service defines the connection information required for ADF to access external data sources such as Azure Storage, Azure SQL Database, REST APIs, etc.
+
+-  Read data from sources
+-  Write data to destinations
+-  Authenticate securely using credentials or managed identities
+    💡 In this step, we WILL connect ADF → Azure SQL Database using SQL Authentication.
+---
+### Why Use SQL Authentication?
+During your Azure SQL Database setup, you enabled both SQL and  **Microsoft Entra (Azure AD) authentication**
+
+| Authentication Type | Description | Use Case |
+|----------------------|-------------|-----------|
+| **Microsoft Entra (Azure AD)** | Authenticates using Azure Active Directory (no passwords, more secure). | Production or enterprise setup |
+| **SQL Authentication** | Authenticates using a username and password (`sqladmin`). | Development or quick testing |
+
+✅ In this project, we use SQL Authentication for simplicity during development.
+
+---
+#### Steps to Create Linked Service in ADF (SQL Authentication)
 
 
 
