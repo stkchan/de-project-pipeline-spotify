@@ -13,6 +13,13 @@
     -  [Link Azure Data Factory (ADF) to GitHub](#link-azure-data-factory-adf-to-github)
   - [4️⃣ Create a Azure SQL](#4️⃣-create-a-azure-sql)
     -  [Azure SQL Database](#azure-sql-database)
+- [Create Tables & Ingest Data (Initial Load)](#-create-tables--ingest-data-initial-load-in-azure-sql-database)
+- [Link Azure Data Factory (ADF) with Azure SQL Database](#link-azure-data-factory-adf-with-azure-sql-database)
+  - [What is a Linked Service?](#what-is-a-linked-service)
+  - [Why Use SQL Authentication?](#why-use-sql-authentication)
+  - [Steps to Create Linked Service in ADF (SQL Authentication)](#steps-to-create-linked-service-in-adf-sql-authentication)
+    - [⚠️ Best Practices](#️-best-practices) 
+  
 
 ---
 
@@ -251,6 +258,28 @@ During your Azure SQL Database setup, you enabled both SQL and  **Microsoft Entr
        -  SQL Server firewall allows access from ADF.
        -  Server name and credentials are correct.
        -  Your SQL Server allows Azure services to connect.
+    
+6. Create the Linked Service
+   -  Click Create once the test connection succeeds.
+   -  ADF will now store your connection securely, allowing it to:
+       -  Read from or write to your Azure SQL Database
+       -  Authenticate using SQL username and password
+    
+7. Verify and Use in Pipelines
+   -  Go to Author → Datasets → + New Dataset.
+   -  Choose Azure SQL Database as your data store.
+   -  Select the Linked Service that just created (`ls_azure_sql_pipeline_spotify`).
+   -  Choose the desired table (`dbo.user`) for data import/export.
+   -  Use this dataset as a `source` or `sink` in pipeline.
+  
+
+##### ⚠️ Best Practices
+-  Use `Microsoft Entra (Managed Identity)` for production environments.
+-  Restrict firewall access on your SQL Server — only allow Azure services or specific IPs.
+-  Store credentials in Azure Key Vault instead of plain text.
+-  Always test connection after deployment or password rotation.
+
+---
 
 
 
