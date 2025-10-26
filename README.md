@@ -217,6 +217,19 @@ During your Azure SQL Database setup, you enabled both SQL and  **Microsoft Entr
 
 ---
 #### Steps to Create Linked Service in ADF (SQL Authentication)
+1. Open Azure Data Factory Studio
+   -  Go to Azure Portal [`Azure Portal`](https://portal.azure.com/)
+   -  Open Data Factory
+   -  Click Open **Azure Data Factory Studio**
+  
+2. Navigate to Manage
+   -  In the left sidebar, click the ⚙️ Manage icon.
+   -  Under **Connections**, select **Linked services**.
+   -  Click + New to create a **new linked service**.
+  
+3. Choose Data Store
+   -  In the New Linked Service panel, search for `Azure SQL Database`.
+   -  Select it and click Continue.
 
 
 
