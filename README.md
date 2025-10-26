@@ -13,14 +13,13 @@
     -  [Link Azure Data Factory (ADF) to GitHub](#link-azure-data-factory-adf-to-github)
   - [4️⃣ Create a Azure SQL](#4️⃣-create-a-azure-sql)
     -  [Azure SQL Database](#azure-sql-database)
-- [Create Tables & Ingest Data (Initial Load)](#-create-tables--ingest-data-initial-load-in-azure-sql-database)
+- [Create Tables & Ingest Data (Initial Load)](#-create-tables-ingest-data-initial-load-in-azure-sql-database)
 - [Link Azure Data Factory (ADF) with Azure SQL Database](#link-azure-data-factory-adf-with-azure-sql-database)
   - [What is a Linked Service?](#what-is-a-linked-service)
   - [Why Use SQL Authentication?](#why-use-sql-authentication)
   - [Steps to Create Linked Service in ADF (SQL Authentication)](#steps-to-create-linked-service-in-adf-sql-authentication)
     - [⚠️ Best Practices](#️-best-practices) 
   
-
 ---
 
 ## Project Overview
