@@ -108,13 +108,25 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
 5. Region: `south-east-asia`
 6. Review + create → Create.
 
+---
+
+#### Link Azure Data Factory (ADF) to GitHub
+##### Connect ADF to GitHub (ADF Studio)
+1.  Open ADF Studio → Manage (gear icon).
+2.  Select Git configuration → Configure.
+3.  Choose repository type: `GitHub`
+4.  Authorize ADF to access GitHub (OAuth prompt) → choose our GitHub account/org.
+5.  Fill in the fields:
+    -  **GitHub account**: Your GitHub user/org that owns the repo
+    -  **Repository name**: e.g., `ecom-data-platform`
+    -  **Collaboration branch**: `main`
+    -  **Root folder**: `/adf`
+    -  **Publish branch**: `adf_publish` (default, recommended)
 
 
 
 
 ---
-
-
 
 
 
