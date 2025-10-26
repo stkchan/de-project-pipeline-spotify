@@ -33,13 +33,13 @@ A Resource Group (RG) is a logical container in Azure that holds related resourc
 1.  Sign in to Azure Portal [`Azure Portal`](https://portal.azure.com/)
 2.  Search **Resource groups** → Create.
 3.  Subscription: pick yours.
-4.  Resource group: e.g., `de-project-pipeline-spotify`.
+4.  Resource group: e.g., `de-project-pipeline-spotify`
 5.  Region: e.g., `south-east-asia` (region where RG metadata resides).
 6.  (Optional) Tags: e.g., `env=dev`
 7.  Review + create → Create.
 ---
 ### Create a Storage Account
-A Storage Account in Azure is the foundation for storing data in the cloud — it’s like a container for your data services.
+A Storage Account in Azure is the foundation for storing data in the cloud — it’s like a container for our data services.
 
 It provides access to multiple storage types under one account, such as:
 -  Blob Storage – for unstructured data like files, images, videos, logs
@@ -47,18 +47,52 @@ It provides access to multiple storage types under one account, such as:
 -  Queue Storage – for message queues between apps
 -  Table Storage – for NoSQL key-value data
 
+---
+
 1. Go to Azure Portal → search **Storage accounts** → Create.
 2. Subscription: Your subscription
-3. Resource group: rg-ecom-dev-sea
-4. Storage account name: stdevecomsea001
-5. Region: Southeast Asia
-6. Performance: Standard
-7. Redundancy: Locally-redundant storage (LRS)
-8. Hierarchical namespace: Enable ✅ (this switches on ADLS Gen2)
-9. (Optional) Blob access tier (default): Hot
-
+3. Resource group: `de-project-pipeline-spotify`
+4. Storage account name: `storagepipelinespotify`
+5. Region: `south-east-asia`
+6. Performance: `Standard`
+7. Redundancy: `Locally-redundant storage (LRS)`
+8. Hierarchical namespace: `Enabled` (this switches on ADLS Gen2)
+9. (Optional) Blob access tier (default): `Hot`
+10. Review + create → Create.
+11. Create containers (data zones) in Storage Account
+    -  Open the storage account → Containers → + Container
+    -  Add: `bronze`, `silver`, `gold` → Create.
 
 ---
+
+**Preferred Storage Type**
+ | Feature | Azure Blob Storage | Azure Data Lake Storage Gen2 |
+ |---------|--------------------|------------------------------|
+ | Purpose | General-purpose storage for files, images, backups, and archives | Designed for big data analytics and data lake workloads |
+ | Structure | Flat namespace (files live in a single level) | Hierarchical namespace (supports folders and subdirectories) |
+ | Performance | Optimized for simple file operations (upload/download) | Optimized for analytical operations (rename, move, directory queries) |
+ | Security & Access Control | Uses Azure RBAC (role-based access) at container level | Supports both Azure RBAC and POSIX-style ACLs (fine-grained folder/file access) |
+ | Integration | Works well with general apps, web services, and storage SDKs | Fully integrated with big data tools (Databricks, Spark, Synapse, HDInsight) |
+ | Cost | Slightly cheaper | Slightly higher due to hierarchical namespace |
+ | Use Cases | File backups, static website hosting, archival storage | Data lakes, ETL pipelines, analytics workloads |
+ | Enable Hierarchical Namespace? | ❌ Not supported | ✅ Required (enables folder structure and ACLs) |
+
+---
+
+**Redundancy (Replication Options)**
+ | Type   | Full Name                      | Scope                        | Copies  | Description                                                                                                      |
+|--------|--------------------------------|-------------------------------|----------|------------------------------------------------------------------------------------------------------------------|
+| **LRS** | Locally Redundant Storage      | One region                    | 3 copies | Data is stored in a single datacenter within one region. Lowest cost, best for non-critical dev/test workloads.  |
+| **ZRS** | Zone Redundant Storage         | One region (across zones)     | 3 copies | Data replicated across three availability zones in the same region for higher availability.                      |
+| **GRS** | Geo-Redundant Storage          | Two regions                   | 6 copies | Data copied to a secondary region (hundreds of km away). Used for disaster recovery.                             |
+| **RA-GRS** | Read-Access Geo-Redundant   | Two regions                   | 6 copies + read access | Same as GRS but allows read access to the secondary region. Useful for high availability and disaster recovery.   |
+
+For most `dev/test` environments, `LRS (Locally-redundant storage)` is cost-effective.
+For `production` and critical workloads, consider `ZRS` or `GRS`.
+
+---
+
+
 
 
 
