@@ -93,11 +93,26 @@ For `production` and critical workloads, consider `ZRS` or `GRS`.
 ---
 
 
+### Create a Azure Data Factory
+**Azure Data Factory (ADF)** is a cloud-based data integration and orchestration service.
+It helps us build, schedule, and manage ETL/ELT pipelines that move and transform data between on-premises and cloud systems.
+
+💡 Think of ADF as a pipeline engine that connects our data sources (Storage, SQL, APIs) to our data destinations (Data Lake, Synapse, BigQuery, etc.) — all with monitoring, triggers, and automation.
+
+---
+
+1. Go to Azure Portal → Search for **Data factories** → Click Create.
+2. Subscription: Your subscription
+3. Resource group: `de-project-pipeline-spotify`
+4. name: `df-pipeline-spotify`
+5. Region: `south-east-asia`
+6. Review + create → Create.
 
 
 
 
 
+---
 
 
 
