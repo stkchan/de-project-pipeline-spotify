@@ -12,6 +12,7 @@
   - [3️⃣ Create a Azure Data Factory](#3️⃣-create-a-azure-data-factory)
     -  [Link Azure Data Factory (ADF) to GitHub](#link-azure-data-factory-adf-to-github)
   - [4️⃣ Create a Azure SQL](#4️⃣-create-a-azure-sql)
+    -  [Azure SQL Database](#azure-sql-database)
 
 ---
 
