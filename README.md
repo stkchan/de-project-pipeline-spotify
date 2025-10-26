@@ -10,6 +10,7 @@
   - [1️⃣ Create a Resource Group](#1️⃣-create-a-resource-group)
   - [2️⃣ Create a Storage account](#2️⃣-create-a-storage-account)
   - [3️⃣ Create a Azure Data Factory](#3️⃣-create-a-azure-data-factory)
+  - [4️⃣ Create a Azure SQL](#4️⃣-create-a-azure-sql)
 
 ---
 
@@ -131,6 +132,44 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
 3.  **Save** (saves to feature branch in Git).
 4.  Create `Pull Request` from feature branch → collaboration branch (`main`).
 5.  Review & merge Pull Request in GitHub.
+---
+
+### Create a Azure SQL
+**What is Azure SQL?**
+
+-  **Azure SQL** is a family of fully managed SQL Server–based services in Azure:
+      -  **Azure SQL Database** → PaaS, a single database or elastic pool (most common for apps & analytics).
+      -  **Azure SQL Managed** Instance → PaaS with near full SQL Server compatibility (instance-level features).
+      -  **SQL Server on Azure VM** → IaaS VM with SQL Server (you manage OS/SQL).
+
+          In this guide weare creating **Azure SQL Database** (a single DB) on a logical server.
+         
+---
+#### Azure SQL Database
+1.  Portal → search **Azure SQL** → + Create → **SQL databases** → Create.
+2.  Subscription / Resource group: select (`project-pipeline-spotify`)
+3.  Database name: `project-pipeline-spotify`
+4.  Server: Create new
+     -  Server name: `project-pipeline-spotify`
+     -  Location: `Southeast Asia`
+     -  Authentication: `Use both SQL and Microsoft Entra`
+     -  Set Microsoft Entra admin: `pick user/group`
+     -  Create SQL admin login/password: e.g., sqladmin
+5.  Workload environment: `Development` (affects recommendations & defaults)
+6.  Compute + Storage
+     -  Click Configure database:
+         -  Choose vCore → General Purpose (cost-effective)
+         -  Provisioned (fixed vCores) or `Serverless` (auto-scale, auto-pause)
+         -  Pick vCores, data max size (e.g., 5–32 GB for dev), and storage type
+         -  Apply
+      
+7.  Networking
+     -  Connectivity method: `Public endpoint`
+  
+8.  Backup storage redundancy
+     -  Select `Locally-redundant backup storage (LRS)`
+  
+9.  Review + create → Create.
 
 ---
 
