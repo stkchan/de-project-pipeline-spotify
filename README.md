@@ -111,7 +111,7 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
 ---
 
 #### Link Azure Data Factory (ADF) to GitHub
-##### Connect ADF to GitHub (ADF Studio)
+##### 1) Connect ADF to GitHub (ADF Studio)
 1.  Open ADF Studio → Manage (gear icon).
 2.  Select Git configuration → Configure.
 3.  Choose repository type: `GitHub`
@@ -123,8 +123,14 @@ It helps us build, schedule, and manage ETL/ELT pipelines that move and transfor
     -  **Root folder**: `/adf`
     -  **Publish branch**: `adf_publish` (default, recommended)
 
-
-
+##### 2) Day-to-Day Workflow (Branches)
+1.  In ADF Studio (Git mode), create a feature branch:
+     -  Top bar → Branch dropdown → New branch  (`feature/update_20251023_base`)
+  
+2.  Build/edit artifacts: **Pipelines**, **Dataset**s, **Linked services**, **Triggers**.
+3.  **Save** (saves to feature branch in Git).
+4.  Create `Pull Request` from feature branch → collaboration branch (`main`).
+5.  Review & merge Pull Request in GitHub.
 
 ---
 
