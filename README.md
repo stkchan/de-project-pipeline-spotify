@@ -18,7 +18,14 @@
   - [What is a Linked Service?](#what-is-a-linked-service)
   - [Why Use SQL Authentication?](#why-use-sql-authentication)
   - [Steps to Create Linked Service in ADF (SQL Authentication)](#steps-to-create-linked-service-in-adf-sql-authentication)
-    - [⚠️ Best Practices](#️-best-practices) 
+    - [⚠️ Best Practices](#️-best-practices)
+- [Incremental Ingestion Pipeline](#incremental-ingestion-pipeline)
+  - [Link service with Azure Data Lake Storage Gen2](#link-service-with-azure-data-lake-storage-gen2)
+  - [Create Pipeline & Parameters](#create-pipeline--parameters)
+  - [Datasets (Reusable)](#datasets-reusable)
+  - [Activities (in order)](#activities-in-order)
+  - [Debug / Test](#debug--test)
+
   
 ---
 
