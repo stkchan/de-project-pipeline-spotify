@@ -323,10 +323,43 @@ After creating the linked service, create a quick dataset to validate:
 
 ---
 
+### Create Pipeline & Parameters
+**Pipeline name:** `incremental_ingestion`
 
+#### 1) Pipeline Parameters
+Create **pipeline parameters** (Author → Pipeline → Parameters):
 
+| Name | Type | Example | Purpose |
+|---|---|---|---|
+| `schema` | String | `dbo` | Schema of source table |
+| `table` | String | `DimUser` | Source table |
+| `cdc_col` | String | `updated_at` | Watermark column (datetime/datetimestamp) |
 
+#### 2) Pipeline Variables
+Create a **variable** (Pipeline → Variables):
 
+| Name | Type | Initial Value | Purpose |
+|---|---|---|---|
+| `current` | String | *(blank)* | Holds `utcNow()` for dynamic output filename |
+
+---
+
+### Datasets (Reusable)
+Create two reusable datasets with **parameterized paths**:
+
+#### 1) `json_dynamic` (ADLS Gen2 → JSON)
+- **Type:** Azure Data Lake Storage Gen2, **Format:** JSON
+- **Linked service:** your ADLS LS (`ls_adlsgen2_storagepipelinespotify`)
+- **Parameters**:  
+  - `container` (String)  
+  - `folder` (String)  
+  - `file` (String)
+- **File path** (use parameters):
+```bash
+Container: @dataset().container
+Directory: @dataset().folder
+File: @dataset().file
+```
 
 
 
