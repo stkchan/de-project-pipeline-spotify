@@ -321,6 +321,13 @@ After creating the linked service, create a quick dataset to validate:
 
 > **Recommendation:** Use **Managed Identity** for production (assign *Storage Blob Data Contributor* or tighter roles to ADF’s identity at the storage scope).
 
+---
+
+
+
+
+
+
 
 
 
