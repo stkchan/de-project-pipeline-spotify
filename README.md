@@ -29,8 +29,8 @@
     - [Pipeline Logic Overview](#pipeline-logic-overview)
     - [Flow Summary](#flow-summary)
     - [Source and Sink Overview](#source-and-sink-overview)
-        - [What is Source?](#what-is-source?)
-        - [What is Sink?](#what-is-sink?)
+        - [What is Source?](#what-is-source)
+        - [What is Sink?](#what-is-sink)
         - [How Watermarking Works](#how-watermarking-works)
 
   
