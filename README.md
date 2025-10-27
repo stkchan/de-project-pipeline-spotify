@@ -361,6 +361,175 @@ Directory: @dataset().folder
 File: @dataset().file
 ```
 
+#### 2) `parquet_dynamic` (ADLS Gen2 → Parquet)
+- **Type:** Azure Data Lake Storage Gen2, **Format:** Parquet
+- **Linked service:** your ADLS LS
+- **Parameters**:  
+- `container` (String)  
+- `folder` (String)  
+- `file` (String)
+- **File path** (use parameters):
+```bash
+Container: @dataset().container
+Directory: @dataset().folder
+File: @dataset().file
+```
+---
+### Activities (in order)
+#### 1) **Lookup** — `last_cdc`
+Purpose: read current watermark from `bronze/cdc/cdc.json`.
+
+- **Source dataset:** `json_dynamic`
+- **Dataset properties:**
+```bash
+container = bronze
+folder = cdc
+file = cdc.json
+```
+- **First row only:** ✅ enabled
+
+**Output shape (example):**
+```json
+{ "firstRow": { "cdc": "1900-01-01" } }
+```
+---
+
+#### 2) **Copy data** — `AzureSQLToLake`
+Purpose: query Azure SQL only rows newer than watermark and write to ADLS (Parquet).
+-  Source:
+    -  Linked service: your Azure SQL LS
+    -  Use query: ✅
+    -  Query (dynamic with parameters & lookup):
+        ```sql
+        SELECT
+            *
+        FROM
+            @{pipeline().parameters.schema}.@{pipeline().parameters.table}
+        WHERE
+            @{pipeline().parameters.cdc_col} > '@{activity('last_cdc').output.firstRow.cdc}'
+          ```
+      > **Notes:
+      > -  Ensure cdc_col is a datetime type in SQL.
+      > -  If using datetimeoffset, adjust casting accordingly.
+
+-  Sink:
+    -  Sink dataset: `parquet_dynamic`
+    -  Dataset properties (dynamic):
+        ```ini
+        container = bronze
+        folder    = @pipeline().parameters.table
+        file      = @concat(pipeline().parameters.table,'_',variables('current'),'.parquet')
+        ```
+    -  Compression: Snappy (default for Parquet) or as needed
+    -  Copy behavior: default (append)
+-  Mappings: Auto (optional explicit mapping for schema evolution)
+Dependency: set `AzureSQLToLake` to run after → `last_cdc`.
+   
+---       
+    
+#### 3) **Set variable** — `current_timestamp`
+Purpose: capture a consistent timestamp for output file naming.
+-  Variable: `current`
+-  Value (dynamic):
+    ```java
+    @utcNow()
+    ```
+Dependency: run after → AzureSQLToLake (or before if you want the timestamp fixed prior to copy).
+
+---  
+
+#### 4) **If Condition** — `If_Incremental_Data`
+Purpose: run CDC update only when rows were ingested.
+-  Expression:
+    ```kotlin
+    @greater(activity('AzureSQLToLake').output.dataRead, 0)
+    ```
+Put the following two activities inside the True branch:
+
+---
+
+##### 4.1) **Script** — `max_cdc`
+Purpose: compute MAX(cdc_col) for the just-ingested slice.
+-  Linked service: Azure SQL LS
+-  Script (query):
+    ```sql
+    SELECT
+        MAX(@{pipeline().parameters.cdc_col}) AS cdc
+    FROM
+        @{pipeline().parameters.schema}.@{pipeline().parameters.table}
+    ```
+
+    > This returns a single row with the latest CDC value.
+    > You’ll reference it in the next activity’s Additional columns.
+    
+---
+
+##### 4.2) **Copy data** — `update_last_cdc`
+Purpose: write the new watermark back to `bronze/cdc/cdc.json`.
+-  Source:
+    -  Dataset: `json_dynamic`
+    -  Dataset properties:
+        ```ini
+        container = bronze
+        folder    = cdc
+        file      = empty.json
+        ```
+    -  Additional columns:
+        -  Column name: `cdc`
+        -  Value (dynamic):
+            ```kotlin
+            @activity('max_cdc').output.resultSets[0].rows[0].cdc
+            ```
+    -  Sink:
+        -  Dataset: `json_dynamic`
+        -  Dataset properties:
+            ```ini
+            container = bronze
+            folder    = cdc
+            file      = cdc.json
+            ```
+        -  Copy behavior: Overwrite (ensure the sink allows overwriting)
+          
+Dependency: `update_last_cdc` after → `max_cdc`.
+
+---
+
+#### 5) **Delete** — `DeleteEmptyFile`
+Purpose: clean up an unwanted file if the previous run produced an empty artifact.
+-  Dataset: parquet_dynamic
+-  Dataset properties:
+    ```ini
+    container = bronze
+    folder    = @pipeline().parameters.table
+    file      = @concat(pipeline().parameters.table,'_',variables('current'))
+    ```
+-  Logging settings: enable if required for audit
+-  Dependency: Typically after → `If_Incremental_Data` (or after `AzureSQLToLake` if you only want to delete when zero rows).
+
+    > 💡 Alternatively, you can Conditionally delete the file when dataRead == 0:
+    > Wrap `DeleteEmptyFile` in a separate If Condition with:
+        ```kotlin
+        @equals(activity('AzureSQLToLake').output.dataRead, 0)
+        ```
+---
+### Debug / Test
+Use Debug with:
+-  schema = dbo
+-  table = DimUser
+-  cdc_col = updated_at
+
+**Expected**:
+-  First run ingests all rows with `updated_at > '1900-01-01'`, writes Parquet:
+    ```makefile
+    bronze/DimUser/DimUser_2025-10-27T01:23:45Z.parquet
+    ```
+-  `cdc.json` is updated to **MAX(updated_at)** from `DimUser` only if rows were read.
+-  Next run ingests only rows with `updated_at` **greater** than the stored `cdc`.
+
+
+
+
+
 
 
 
