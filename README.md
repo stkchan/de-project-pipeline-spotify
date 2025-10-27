@@ -25,6 +25,13 @@
   - [Datasets (Reusable)](#datasets-reusable)
   - [Activities (in order)](#activities-in-order)
   - [Debug / Test](#debug--test)
+  - [Pipeline Summary — `incremental_ingestion`](#pipeline-summary--incremental_ingestion)
+    - [Pipeline Logic Overview](#pipeline-logic-overview)
+    - [Flow Summary](#flow-summary)
+    - [Source and Sink Overview](#source-and-sink-overview)
+        - [What is Source?](#What-is-source?)
+        - [What is Sink?](#What-is-sink?)
+        - [How Watermarking Works](#how-watermarking-works)
 
   
 ---
@@ -523,9 +530,9 @@ Purpose: clean up an unwanted file if the previous run produced an empty artifac
 
     > 💡 Alternatively, you can Conditionally delete the file when dataRead == 0:
     > Wrap `DeleteEmptyFile` in a separate If Condition with:
-        ```kotlin
-        @equals(activity('AzureSQLToLake').output.dataRead, 0)
-        ```
+      ```kotlin
+      @equals(activity('AzureSQLToLake').output.dataRead, 0)
+      ```
 ---
 ### Debug / Test
 Use Debug with:
@@ -541,7 +548,91 @@ Use Debug with:
 -  `cdc.json` is updated to **MAX(updated_at)** from `DimUser` only if rows were read.
 -  Next run ingests only rows with `updated_at` **greater** than the stored `cdc`.
 
+---
 
+### Pipeline Summary — `incremental_ingestion`
+This Incremental Ingestion Pipeline in Azure Data Factory (ADF) automates extracting only new or changed rows from `Azure SQL Database` table and landing them into `Azure Data Lake Storage Gen2 (ADLS)` as `Parquet files`.
+
+It uses a watermarking mechanism — tracking the latest `updated_at timestamp` so that each pipeline run only loads rows newer than the last ingestion.
+
+#### Pipeline Logic Overview
+| Step       | Activity                    | Description                                           |
+|------------|-----------------------------|-------------------------------------------------------|
+| **1️⃣** | **Lookup – `last_cdc`**                  | Reads the current watermark value (`cdc`) from `bronze/cdc/cdc.json` in ADLS Gen2. This value indicates the last processed timestamp from the previous run. |
+| **2️⃣** | **Copy data – `AzureSQLToLake`**         | Extracts only **new or updated rows** from Azure SQL Database where `cdc_col` (e.g., `updated_at`) is greater than the last watermark. The extracted data is written as Parquet files to ADLS Gen2. |
+| **3️⃣** | **Set variable – `current_timestamp`**   | Captures the current UTC timestamp (`@utcNow()`) and stores it in a variable called `current`. This value is used to name output Parquet files dynamically. |
+| **4️⃣** | **If Condition – `If_Incremental_Data`** | Checks whether any data was read in the previous Copy activity using the expression `@greater(activity('AzureSQLToLake').output.dataRead, 0)`. If true, runs watermark update logic. |
+| **4️⃣.1️⃣** | **Script – `max_cdc`**                | Executes a SQL query in Azure SQL to retrieve the **maximum value of the CDC column** (e.g., `MAX(updated_at)`). This identifies the new watermark value. |
+| **4️⃣.2️⃣** | **Copy data – `update_last_cdc`**    | Writes the new watermark (from `max_cdc`) back to the JSON file `bronze/cdc/cdc.json`, overwriting the previous value. This ensures the next run only loads newer data. |
+| **5️⃣** | **Delete – `DeleteEmptyFile`**           | Deletes temporary or empty Parquet files if no data was extracted, preventing unnecessary zero-byte files in the data lake. |
+
+---
+
+#### Flow Summary
+1. Read last watermark (`cdc.json`)  
+2. Query Azure SQL for rows newer than that timestamp  
+3. Write data to ADLS (Parquet)  
+4. If new data exists → update watermark  
+5. Optionally clean up empty files  
+
+---
+
+#### Source and Sink Overview
+| Component | Definition | This Pipeline’s Configuration |
+|------------|-------------|-------------------------------|
+| **Source** | The data origin — where ADF **reads** from | **Azure SQL Database** → Table in schema `dbo` (e.g., `DimUser`), filtered using watermark (`updated_at > last_cdc`) |
+| **Sink** | The data destination — where ADF **writes** to | **Azure Data Lake Storage Gen2** → Container `bronze`, folder named after the table, file named dynamically as `table_timestamp.parquet` |
+
+
+##### What is Source?
+**Source** refers to the **data origin** from which ADF extracts data.
+
+In this pipeline:
+-  Source type: `Azure SQL Database`
+-  Source Linked Service: Connection to your Azure SQL Server (`project-pipeline-spotify.database.windows.net`)
+-  Data pulled from: Table in the dbo schema (`dbo.DimUser`)
+-  Filter condition: Only rows where
+    ```sql
+    updated_at > last watermark (from cdc.json)
+    ```
+
+    > 💡 This ensures the pipeline fetches only incremental data since the last run — not the entire table.
+
+---
+
+##### What is Sink?
+**Sink** is the **destination** where ADF writes the extracted or transformed data.
+
+In this pipeline:
+-  Sink type: `Azure Data Lake Storage Gen2`
+-  Sink Linked Service: Connection to `storagepipelinespotify`
+-  Destination format: Parquet file
+-  Path pattern:
+    ```makefile
+    bronze/<table_name>/<table_name>_<timestamp>.parquet
+    ```
+
+-  example:
+    ```makefile
+    bronze/DimUser/DimUser_2025-10-27T01:23:45Z.parquet
+    ```
+
+    > 💡 The Sink holds the output files in an optimized format (Parquet) for analytics or further transformation.
+
+---
+
+##### How Watermarking Works
+1.  The pipeline first reads the last processed timestamp (`cdc`) `from bronze/cdc/cdc.json`.
+2.  The SQL query filters out all rows with `updated_at` less than or equal to that timestamp.
+3.  After successful ingestion, the pipeline updates the watermark in `cdc.json` to the latest value.
+4.  Next run → starts again from that new watermark.
+      > ✅ This prevents duplicate loading and ensures each run only ingests new or **changed data**.
+
+
+| Run | Last CDC (`cdc.json`) | Data Extracted | New CDC Written |
+|------|------------------------|----------------|------------------|
+| **1st** | `1900-01-01` | All rows | `2025-10-27 08:15:00` |
+| **2nd** | `2025-10-27 08:15:00` | Only rows newer than that | `2025-10-27 10:30:00` |
 
 
 ---
