@@ -280,6 +280,48 @@ During your Azure SQL Database setup, you enabled both SQL and  **Microsoft Entr
 
 ---
 
+## Incremental Ingestion Pipeline
+
+### Link service with Azure Data Lake Storage Gen2
+1. **Open ADF Studio**
+   - Azure Portal → Data Factory (`de-pipeline-spotify`) → **Open Azure Data Factory Studio**
+
+2. **Go to Manage → Linked services**
+   - Left sidebar → **Manage (⚙️)** → **Linked services** → **+ New**
+
+3. **Choose Connector**
+   - Search **“Azure Data Lake Storage Gen2”** → **Continue**
+
+4. **Configure Connection**
+   - **Name:** `<name of link service>`
+   - **Connect via Integration Runtime:** `AutoResolveIntegrationRuntime`
+   - **Authentication type:** `Account key`
+   - **Account selection method:** `From Azure subscription`
+   - **Azure subscription:** `<subscription>`
+   - **Storage account name:** `< name of storage account>`
+   - **Test connection:** `To linked service`
+   - **Create**
+  
+#### Quick Verify
+After creating the linked service, create a quick dataset to validate:
+
+1. **Author → Datasets → + New dataset**
+2. **Azure Data Lake Storage Gen2** → **Format**: `DelimitedText` (or `Parquet/JSON`)
+3. **Linked service:** `<name of link service>`
+4. **File path:** `bronze/` *(or any existing container/folder)*  
+5. **OK** → **Preview data** (if path/file exists) → ✅
+
+#### Authentication Methods for ADLS Gen2 — When to Use What
+| Method | What it uses | Pros | Cons | Typical Use Case |
+|--------|--------------|------|------|------------------|
+| **Account key** | Storage account access key | Simple to set up; works everywhere | Key secrecy/rotation burden; coarse-grained access | Dev/test, same team controls storage; quick POCs |
+| **Managed Identity (Microsoft Entra)** | ADF’s Managed Identity + RBAC | No secrets; least-privilege via RBAC; rotation-free | Needs RBAC setup on Storage | **Recommended for prod**; enterprise posture |
+| **Service Principal (Client Secret/Cert)** | App registration + secret/cert | Fine-grained app identity; multi-env CI/CD friendly | Secret/cert rotation; extra setup | CI/CD pipelines, cross-subscription access |
+| **SAS Token** | Time-scoped, permission-scoped token | Scoped & time-limited access | Token lifecycle/rotation | Temporary or delegated access (partners/jobs) |
+
+> **Recommendation:** Use **Managed Identity** for production (assign *Storage Blob Data Contributor* or tighter roles to ADF’s identity at the storage scope).
+
+
 
 
 ---
