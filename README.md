@@ -326,6 +326,14 @@ After creating the linked service, create a quick dataset to validate:
 ### Create Pipeline & Parameters
 **Pipeline name:** `incremental_ingestion`
 
+---
+
+#### Flow Pipeline Overview:
+![Flow Pipeline Overview](https://github.com/stkchan/de-project-pipeline-spotify/blob/c30abbbaf350eb82669b83cde9802b372c7636aa/images/flow_incremental.png)
+
+---
+
+
 #### 1) Pipeline Parameters
 Create **pipeline parameters** (Author → Pipeline → Parameters):
 
@@ -525,10 +533,6 @@ Use Debug with:
     ```
 -  `cdc.json` is updated to **MAX(updated_at)** from `DimUser` only if rows were read.
 -  Next run ingests only rows with `updated_at` **greater** than the stored `cdc`.
-
-
-
-
 
 
 
