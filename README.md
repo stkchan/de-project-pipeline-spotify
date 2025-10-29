@@ -634,6 +634,135 @@ In this pipeline:
 | **1st** | `1900-01-01` | All rows | `2025-10-27 08:15:00` |
 | **2nd** | `2025-10-27 08:15:00` | Only rows newer than that | `2025-10-27 10:30:00` |
 
+---
+## Adding Backfilling feature in Azure Data Factory (ADF)
+This feature lets you **override the watermark** and ingest any historical range by supplying a **`from_date`** parameter at run-time.  
+If `from_date` is **blank**, the pipeline uses the **stored watermark** from each table’s `*_cdc/cdc.json`.  
+If `from_date` is **provided**, the pipeline starts from that date (backfill) and—after a successful run—**updates** the watermark.
+
+---
+
+### 1) Add a pipeline parameter `from_date`
+
+**Pipeline → Parameters → + New**
+
+| Name        | Type   | Default | Purpose                                      |
+|-------------|--------|---------|----------------------------------------------|
+| `from_date` | String | *(blank)* | Optional backfill start (ISO-8601, UTC) e.g. `2025-09-01T00:00:00` |
+
+> ✅ Keep it **empty** for normal incremental runs, or set a value to backfill.
+
+---
+
+### 2) Update the **Source** query in `AzureSQLToLake`
+
+**Activity:** `Copy data` → *Source* → **Use query** ✅
+
+```sql
+SELECT 
+    *
+FROM
+    @{pipeline().parameters.schema}.@{pipeline().parameters.table}
+WHERE
+    @{pipeline().parameters.cdc_col} >
+    '@{if(empty(pipeline().parameters.from_date), activity('last_cdc').output.firstRow.cdc, pipeline().parameters.from_date)}'
+```
+Explanation
+-  If `from_date` is empty → use `last_cdc` from the JSON watermark.
+-  If `from_date` has a value → use that value to backfill.
+-  Keep `cdc_col` a datetime/datetime2 in SQL. If it’s `datetimeoffset`, cast appropriately.
+---
+
+### 3) Create per-table CDC folders in ADLS Gen2
+In container `bronze/`, create these folders (adjust for your tables):
+
+```pgsql
+bronze/
+  DimArtist_cdc/
+    cdc.json      ← {"cdc":"1900-01-01"}
+    empty.json    ← {}
+  DimDate_cdc/
+    cdc.json      ← {"cdc":"1900-01-01"}
+    empty.json    ← {}
+  DimTrack_cdc/
+    cdc.json      ← {"cdc":"1900-01-01"}
+    empty.json    ← {}
+  DimUser_cdc/
+    cdc.json      ← {"cdc":"1900-01-01"}
+    empty.json    ← {}
+  FactStream_cdc/
+    cdc.json      ← {"cdc":"1900-01-01"}
+    empty.json    ← {}
+```
+---
+### 4) Make CDC folder dynamic in Lookup last_cdc
+Activity: `Lookup` → Source → Dataset: `json_dynamic`
+Dataset properties (parameters):
+
+```ini
+container = bronze
+folder    = @concat(pipeline().parameters.table, '_cdc')
+file      = cdc.json
+```
+-  First row only: ✅
+-  Expected JSON shape: `{"cdc":"1900-01-01"}`
+
+**Resulting path examples**
+-  Table = `DimUser` → `bronze/DimUser_cdc/cdc.json`
+-  Table = `FactStream` → `bronze/FactStream_cdc/cdc.json`
+
+---
+
+### How to Use the Backfill
+#### A) Normal incremental (no backfill)
+
+Run with:
+-  `schema = dbo`
+-  `table = DimUser`
+-  `cdc_col = updated_at`
+-  `from_date = "" (leave blank)`
+
+Pipeline will use the stored watermark from:
+
+```bash
+bronze/DimUser_cdc/cdc.json
+```
+
+#### B) Backfill from a chosen date
+Run with:
+-  `from_date = 2025-09-01T00:00:00`
+
+Pipeline loads rows with:
+
+```nginx
+updated_at > '2025-09-01T00:00:00'
+```
+Then updates `bronze/DimUser_cdc/cdc.json` to new `MAX(updated_at)`.
+
+#### C) Reset to full load behavior
+
+Set the file back to the minimum date:
+
+```pgsql
+bronze/<Table>_cdc/cdc.json = {"cdc":"1900-01-01"}
+```
+or run with a very old `from_date`.
+
+---
+### Example Run Matrix
+
+| Scenario | Params |Expected |
+|------|------------------------|----------------|
+| **First-ever run** | `from_date = ""`, `cdc.json = 1900-01-01` | Full data load; writes Parquet; updates `cdc.json` to latest timestamp |
+| **Daily incremental** | `from_date = ""` | Loads only rows newer than last `cdc` |
+| **Backfill Sept** | `from_date = 2025-09-01T00:00:00` | Loads rows since Sept 1; updates `cdc.json` after run |
+| **Reset & reload** | Manually set `cdc.json` to `1900-01-01` | Next run behaves like first load |
+
+---
+
+
+
+
 
 ---
 
