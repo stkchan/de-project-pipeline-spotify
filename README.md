@@ -760,6 +760,83 @@ or run with a very old `from_date`.
 
 ---
 
+## Looping the Pipelines with **ForEach** (multi-table incremental loads)
+This section turns single-table pipeline into a **multi-table** runner using **ForEach**.  
+
+---
+### 1) Create a new pipeline from the previous one
+- Duplicate your working pipeline (the one from **“Incremental Ingestion Pipeline”**).
+- Name the new pipeline: **`incremental_loop`**.
+
+> We’ll keep all activities (`last_cdc`, `AzureSQLToLake`, `current_timestamp`, `If_Incremental_Data` → `max_cdc` → `update_last_cdc`, `DeleteEmptyFile`), but drive them with **ForEach**.
+
+---
+
+### 2) Remove the old pipeline parameters
+Delete these pipeline-level **Parameters** if they exist:
+- `schema`
+- `table`
+- `cdc_col`
+- `from_date`
+
+> In this loop version, each iteration gets those values from the **ForEach item** (not from pipeline parameters).
+
+---
+
+### 3) Add a new pipeline parameter: `loop_input` (Array)
+Create a **pipeline parameter**:
+
+| Name         | Type  | Default Value |
+|--------------|-------|----------------|
+| `loop_input` | Array | *(paste JSON below)* |
+
+Paste this JSON as the **default value** (you can edit it later to add/remove tables):
+
+```json
+[
+  { "schema": "dbo", "table": "DimUser",   "cdc_col": "updated_at",      "from_date": "" },
+  { "schema": "dbo", "table": "DimTrack",  "cdc_col": "updated_at",      "from_date": "" },
+  { "schema": "dbo", "table": "DimDate",   "cdc_col": "date",            "from_date": "" },
+  { "schema": "dbo", "table": "DimArtist", "cdc_col": "updated_at",      "from_date": "" },
+  { "schema": "dbo", "table": "FactStream","cdc_col": "stream_timestamp","from_date": "" }
+]
+```
+> You can add more objects later; each must include `schema`, `table`, and `cdc_col`. `from_date` is optional (blank = use watermark).
+
+---
+
+### 4) Add a ForEach activity
+-  Drag ForEach onto the canvas (name it ForEach_Tables).
+-  Settings:
+    -  Items =
+        ```text
+        @pipeline().parameters.loop_input
+        ```
+    -  `Sequential` = Enabled ✅ (process one table at a time)
+      
+> Enabling Sequential guarantees that shared things (like the `current` variable and watermark writes) do not conflict across parallel iterations.
+
+---
+
+### 5) Move all your table activities inside ForEach
+Inside **ForEach_Tables** → Activities panel, add (or move) your existing activities in this order:
+1.  `last_cdc` (Lookup)
+2.  `AzureSQLToLake` (Copy Data)
+3.  `current_timestamp` (Set Variable)
+4.  `If_Incremental_Data` (If Condition)
+      -  True branch:
+          -  `max_cdc` (Script)
+          -  `update_last_cdc` (Copy Data)
+5.  `DeleteEmptyFile` (Delete) (optional)
+   
+>  Keep the same dependencies you already had between these activities.
+
+---
+
+### 6) Update dynamic content to use `item()` (the ForEach item)
+
+
+
 
 
 
