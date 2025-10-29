@@ -834,11 +834,76 @@ Inside **ForEach_Tables** → Activities panel, add (or move) your existing acti
 ---
 
 ### 6) Update dynamic content to use `item()` (the ForEach item)
+Anywhere you previously referenced `pipeline().parameters.schema` / `table` / `cdc_col` / `from_date`, switch to `item()`:
+
+#### 7.1 Lookup `last_cdc`
+-  Dataset: `json_dynamic`
+-  Dataset properties:
+    ```ini
+    container = bronze
+    folder    = @concat(item().table, '_cdc')
+    file      = cdc.json
+    ```
+-  First row only = Enabled
+
+#### 7.2 Copy Data `AzureSQLToLake` (Source)
+-  Use query
+-  Query:
+    ```sql
+    SELECT
+      *
+    FROM
+        @{item().schema}.@{item().table}
+    WHERE
+        @{item().cdc_col} >
+        '@{if(empty(item().from_date), activity('last_cdc').output.firstRow.cdc, item().from_date)}'
+    ```
+    Notes:
+    -  `item().from_date` blank → use `last_cdc` from JSON.
+    -  Otherwise → backfill from the provided date.
+    -  Ensure `cdc_col` has a datetime/datetime2 type (cast if needed).
 
 
+#### 7.3 Copy Data `AzureSQLToLake` (Sink → `parquet_dynamic`)
+-  Dataset properties:
+    ```ini
+    container = bronze
+    folder    = @item().table
+    file      = @concat(item().table, '_', variables('current'), '.parquet')
+    ```
+    
+#### 7.4 Script max_cdc
+- Script:
+  ```sql
+  SELECT
+    MAX(@{item().cdc_col}) AS cdc
+  FROM
+    @{item().schema}.@{item().table}
+  ```
+-  Returns a single row with the new watermark.
 
-
-
+#### 7.5 Copy Data `update_last_cdc`
+-  **Source**: `json_dynamic`
+    ```ini
+    container = bronze
+    folder    = @concat(item().table, '_cdc')
+    file      = empty.json
+    ```
+-  **Sink**: `json_dynamic`
+     ```ini
+    container = bronze
+    folder    = @concat(item().table, '_cdc')
+    file      = cdc.json
+    ```
+    -  Copy behavior: Overwrite
+ 
+#### 7.6 **Delete DeleteEmptyFile**
+-  Dataset: `parquet_dynamic`
+   ```ini
+   container = bronze
+   folder    = @item().table
+   file      = @concat(item().table, '_', variables('current'), '.parquet')
+   ```
 
 
 ---
