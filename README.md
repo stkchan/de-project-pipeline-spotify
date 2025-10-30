@@ -961,6 +961,33 @@ This is the **Unity Catalog metastore root**—the default managed storage where
 
 ---
 
+### 5) Log in to Databricks Account Console (fixing AAD login error)
+
+If you see:  
+> `Selected user account does not exist in tenant ‘Microsoft Services’ and cannot access the application…`
+
+**Fix:**
+1. Azure Portal → `Microsoft Entra ID` → **Users**  
+2. Open your user → copy `User principal name` 
+3. Use this `User principal name`  to sign in to the Databricks **Account Console**
+
+---
+
+### 6) Create Databricks **Workspace** in the Account Console
+
+1. In **Account Console** → **Workspaces** → **Create workspace**  
+2. **Name:** `<databriccks name>`  
+3. **Region:** `southeastasia`  
+4. **Metastore storage root:**
+5. **Access Connector ID:** paste the **Resource ID** of  `<access-connect-databrickcs>`
+6. **Create**  
+7. (Optional) **Metastore Admins:** add your personal account(s)
+
+> The **Metastore Admin** can manage catalogs, schemas, permissions, and external locations.
+
+---
+
+
 
 ---
 
