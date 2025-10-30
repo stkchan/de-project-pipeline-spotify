@@ -766,7 +766,7 @@ This section turns single-table pipeline into a **multi-table** runner using **F
 
 ---
 ### 1) Create a new pipeline from the previous one
-- Duplicate your working pipeline (the one from **“Incremental Ingestion Pipeline”**).
+- Duplicate our working pipeline (the one from **“Incremental Ingestion Pipeline”**).
 - Name the new pipeline: **`incremental_loop`**.
 
 > We’ll keep all activities (`last_cdc`, `AzureSQLToLake`, `current_timestamp`, `If_Incremental_Data` → `max_cdc` → `update_last_cdc`, `DeleteEmptyFile`), but drive them with **ForEach**.
@@ -819,8 +819,8 @@ Paste this JSON as the **default value** (you can edit it later to add/remove ta
 
 ---
 
-### 5) Move all your table activities inside ForEach
-Inside **ForEach_Tables** → Activities panel, add (or move) your existing activities in this order:
+### 5) Move all our table activities inside ForEach
+Inside **ForEach_Tables** → Activities panel, add (or move) our existing activities in this order:
 1.  `last_cdc` (Lookup)
 2.  `AzureSQLToLake` (Copy Data)
 3.  `current_timestamp` (Set Variable)
@@ -830,12 +830,12 @@ Inside **ForEach_Tables** → Activities panel, add (or move) your existing acti
           -  `update_last_cdc` (Copy Data)
 5.  `DeleteEmptyFile` (Delete) (optional)
    
->  Keep the same dependencies you already had between these activities.
+>  Keep the same dependencies we already had between these activities.
 
 ---
 
 ### 6) Update dynamic content to use `item()` (the ForEach item)
-Anywhere you previously referenced `pipeline().parameters.schema` / `table` / `cdc_col` / `from_date`, switch to `item()`:
+Anywhere we previously referenced `pipeline().parameters.schema` / `table` / `cdc_col` / `from_date`, switch to `item()`:
 
 #### 7.1 Lookup `last_cdc`
 -  Dataset: `json_dynamic`
@@ -905,6 +905,61 @@ Anywhere you previously referenced `pipeline().parameters.schema` / `table` / `c
    folder    = @item().table
    file      = @concat(item().table, '_', variables('current'), '.parquet')
    ```
+---
+
+## Setup Azure Databricks
+
+This section wires **Databricks + Unity Catalog** to our **ADLS Gen2** with an **Access Connector (Managed Identity)**, creates **catalog & external locations** for `bronze/silver/gold`, enables **serverless**, and reads a Parquet file from account storage (lake).
+
+---
+
+### 1) Create Databricks (Azure resource)
+
+1. Azure Portal → **Create a resource** → search **Azure Databricks** → **Create**  
+2. **Workspace name:** `<databricks name>`  
+3. **Region:** `Southeast Asia`  
+4. **Pricing tier:** (as you prefer)  
+5. **Review + Create** → **Create**
+
+> ℹ️ We *can* usually create multiple workspaces per region (subject to subscription/quotas or account policies). If blocked, check our Azure limits or Databricks account plan.
+
+---
+
+### 2) Create **Access Connector** (Managed Identity for Databricks)
+
+1. Azure Portal → **Create** → search **Databricks Access Connector** → **Create**  
+2. **Name:** `<access-connect-databrickcs-name>`  
+3. **Region:** `Southeast Asia`  
+4. **Review + Create** → **Create**
+
+> The Access Connector is an **Azure Managed Identity** that Databricks uses to access our storage securely (no keys).
+
+---
+
+### 3) Grant Storage permissions to the Access Connector
+
+1. Go to **Storage account**: `storagepipelinespotify`  
+2. **Access control (IAM)** → **Add** → **Add role assignment**  
+3. **Role:** `Storage Blob Data Contributor`  
+4. **Assign access to:** **Managed identity**  
+5. **Members:** `access-connect-databrickcs-de-projet-pipeline-spotify` (the Access Connector)  
+6. **Save**
+
+> This role allows Databricks (via the Access Connector) to **read/write** data in our containers.
+
+---
+
+### 4) Prepare a container/folder for Unity Catalog metastore root
+
+- In our storage account, create a dedicated container/folder for the metastore, e.g.:  
+  - **Container:** `databricksmetastore` (or a folder inside a dedicated container)
+
+We will use a **URI like**: `abfss://<contain name>@<storage name>.dfs.core.windows.net/`
+
+**What is this used for?**  
+This is the **Unity Catalog metastore root**—the default managed storage where UC may place managed table data, delta logs, and system-managed artifacts if a catalog/database doesn’t specify its own external storage. Keeping it separate from our data zones helps with isolation and governance.
+
+---
 
 
 ---
