@@ -963,12 +963,12 @@ This is the **Unity Catalog metastore root**—the default managed storage where
 
 ### 5) Log in to Databricks Account Console (fixing AAD login error)
 
-If you see:  
+If we see:  
 > `Selected user account does not exist in tenant ‘Microsoft Services’ and cannot access the application…`
 
 **Fix:**
 1. Azure Portal → `Microsoft Entra ID` → **Users**  
-2. Open your user → copy `User principal name` 
+2. Open our user → copy `User principal name` 
 3. Use this `User principal name`  to sign in to the Databricks **Account Console**
 
 ---
@@ -1038,6 +1038,52 @@ For each zone:
 > This allows **fully managed** compute with fast startup and no cluster management.
 
 ---
+
+### 11) Initialize a **Databricks Bundle** (CLI project)
+
+From our **Workspace** (Repos/Files) or a local dev folder (with CLI auth set up):
+
+```bash
+databricks bundle init
+```
+
+We will be prompted to choose:
+-  Template/Bundle name (project name)
+-  Target workspace (our workspace URL)
+-  Deployment targets (dev/prod)
+-  Resources to generate (jobs, notebooks, pipelines)
+
+**Databricks Asset Bundles (DAB)** provide infrastructure-as-code for Databricks.
+They generate config files (`YAML`) that define **jobs**, **notebooks**, **pipelines**, **permissions**, **connections**, and let us deploy with `databricks bundle deploy` and run with `databricks bundle run`.
+Great for **repeatable CI/CD** across dev/stage/prod.
+
+> The `yes / naming` prompts we saw are the wizard steps creating the starter bundle scaffold (folders like `bundle.yml`, `resources`/).
+
+
+---
+
+### 12) Quick notebook test: read from bronze
+Create a notebook (`dev-silver`) and run:
+
+```python
+df = (spark.read
+           .format("parquet")
+           .load("abfss://bronze@<storage account name>.core.windows.net/DimUser"))
+
+display(df)
+```
+**What this does**
+-  Uses the ABFSS (ADLS Gen2) protocol via `OAuth` (`Managed Identity` behind the credential)
+-  Reads Parquet files from `bronze/DimUser/`
+-  Displays sample rows and schema
+
+> If prefer `Unity Catalog external tables`, we can also define:
+  ```sql
+  CREATE SCHEMA IF NOT EXISTS spotify_catalog.bronze;
+  CREATE EXTERNAL TABLE IF NOT EXISTS spotify_catalog.bronze.dim_user
+    LOCATION 'abfss://bronze@<storage account name>.dfs.core.windows.net/DimUser';
+  SELECT * FROM spotify_catalog.bronze.dim_user LIMIT 10;
+  ```
 
 ---
 
