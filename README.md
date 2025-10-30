@@ -976,18 +976,68 @@ If you see:
 ### 6) Create Databricks **Workspace** in the Account Console
 
 1. In **Account Console** → **Workspaces** → **Create workspace**  
-2. **Name:** `<databriccks name>`  
+2. **Name:** `<metastore name>`  
 3. **Region:** `southeastasia`  
-4. **Metastore storage root:**
+4. **ADLS Gen 2 path (for External location of data/files):** `<name of metastore container>@<storage account name>.dfs.core.windows.net/`  
 5. **Access Connector ID:** paste the **Resource ID** of  `<access-connect-databrickcs>`
 6. **Create**  
-7. (Optional) **Metastore Admins:** add your personal account(s)
+7. (Optional) **Metastore Admins:** add our personal account(s)
 
 > The **Metastore Admin** can manage catalogs, schemas, permissions, and external locations.
 
 ---
 
+### 7) In the Workspace: Create a **Catalog**
 
+1. Open our **Databricks workspace** → left nav **Catalog**  
+2. **Create catalog** → **Name:** `spotify_catalog` → **Create**
+
+> With Unity Catalog, **catalogs** are top-level namespaces (like databases at the top layer).  
+> We will keep tables under `spotify_catalog.<schema>.<table>`.
+
+---
+
+### 8) Create a **Credential** (Unity Catalog → External Data → Credential)
+
+1. **Catalog** → **External Data** → **Credentials** → **Create credential**  
+2. **Credential type:** **Azure Managed Identity**  
+3. **Name:** `cred_access_connector`  
+4. **Access Connector ID:** paste the **Resource ID** of our Access Connector  
+5. **Create**
+
+> This credential lets UC use the **Managed Identity** to access ADLS paths.
+
+---
+
+### 9) Create **External Locations** for `bronze/silver/gold`
+
+For each zone:
+
+1. **Catalog** → **External Data** → **External locations** → **Create**  
+2. **External location name:** `bronze` (repeat for `silver`, `gold`)  
+3. **Storage Type:** Azure Data Lake Storage  
+4. **URL:** the **container path** in ADLS:
+- `abfss://bronze@<storage account name>.dfs.core.windows.net/`
+- `abfss://silver@<storage account name>y.dfs.core.windows.net/`
+- `abfss://gold@<storage account name>.dfs.core.windows.net/`
+5. **Storage credential:** `cred_access_connector` (from step 8)  
+6. **Create**
+
+> These **External Locations** let Unity Catalog manage permissions and create **external tables** that point at our `bronze/silver/gold` containers.
+
+---
+
+### 10) Enable **Serverless compute** (Account level)
+
+1. **Account Console** → **Settings** → **Feature enablement**  
+2. Enable:
+- **Serverless compute for Workflows**
+- **Serverless compute for Notebooks**
+- **Serverless compute for Delta Live Tables**
+
+> This allows **fully managed** compute with fast startup and no cluster management.
+
+---
 
 ---
 
