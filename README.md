@@ -34,6 +34,7 @@
         - [How Watermarking Works](#how-watermarking-works)
 - [Adding Backfilling Feature in Azure Data Factory (ADF)](#adding-backfilling-feature-in-azure-data-factory-adf)
 - [Looping the Pipelines with **ForEach** (multi-table incremental loads)](#looping-the-pipelines-with-foreach-multi-table-incremental-loads)
+- [Setup Azure Databricks](#setup-azure-databricks)
   
 ---
 
